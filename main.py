@@ -7,8 +7,16 @@ counter = 1
 
 
 @app.get("/tasks")
-def get_tasks():
-    """Return all tasks."""
+def get_tasks(priority: int | None = None):
+    """Return all tasks, or filter by priority."""
+    if priority is not None:
+        if priority < 1 or priority > 3:
+            raise HTTPException(
+                status_code=422,
+                detail="Priority must be between 1 and 3"
+            )
+        return [task for task in tasks if task["priority"] == priority]
+
     return tasks
 
 
@@ -24,13 +32,22 @@ def get_task(task_id: int):
 
 @app.post("/tasks")
 def add_task(task: dict):
-    """Add a task with a title and an owner."""
+    """Add a task with a title, owner, and priority."""
     global counter
+
+    priority = task.get("priority", 2)
+
+    if not isinstance(priority, int) or priority < 1 or priority > 3:
+        raise HTTPException(
+            status_code=422,
+            detail="Priority must be an integer between 1 and 3"
+        )
 
     new_task = {
         "id": counter,
         "title": task.get("title"),
-        "owner": task.get("owner")
+        "owner": task.get("owner"),
+        "priority": priority
     }
 
     tasks.append(new_task)
